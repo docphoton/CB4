@@ -64,6 +64,7 @@ private:
 			leftDrive  = .6;
 			robotDrive->TankDrive(rightDrive, leftDrive);
 			dummy++;
+
 			}
 		else
 			{
@@ -71,6 +72,7 @@ private:
 			leftDrive = 0;
 			robotDrive->TankDrive(rightDrive, leftDrive);
 				pickup->Set(0);
+
 			}
 			SmartDashboard::PutNumber("dummy",dummy);
 		}
