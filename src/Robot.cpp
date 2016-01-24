@@ -11,6 +11,7 @@ private:
 	BuiltInAccelerometer *accel = new BuiltInAccelerometer();
 	Joystick *rightStick = new Joystick(0);
 	Joystick *leftStick  = new Joystick(1);
+
 	Timer *timer =new Timer();
 	Talon *fRight = new Talon(0);
 	Talon *fLeft = new Talon(1);
@@ -18,6 +19,7 @@ private:
 	Talon *bLeft = new Talon(3);
 	Talon *pickup = new Talon(4);
 	DigitalOutput *led1 = new DigitalOutput(1);
+	DigitalInput *limitswitch =new DigitalInput(2);
 	RobotDrive *robotDrive = new RobotDrive(fLeft, bLeft, fRight, bRight);
 	void RobotInit()
 	{
@@ -71,6 +73,9 @@ private:
 			leftDrive = 0;
 			robotDrive->TankDrive(rightDrive, leftDrive);
 				pickup->Set(0);
+				if(limitswitch->Get()>0){ //this should in theroy reset autum. I can't seem to make it equal a true or a 1
+	timer=0;
+				}
 			}
 			SmartDashboard::PutNumber("dummy",dummy);
 		}
@@ -85,6 +90,7 @@ private:
 	{
 		rightDrive = rightStick->GetY();
 		leftDrive  = leftStick->GetY();
+
 		rightDrive = .7*rightDrive;
 		leftDrive  = .7*leftDrive;
 		robotDrive->TankDrive(rightDrive, leftDrive);
