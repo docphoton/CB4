@@ -1,4 +1,4 @@
-  #include "WPILib.h"
+#include "WPILib.h"
 class Robot: public IterativeRobot
 {
 private:
@@ -6,63 +6,28 @@ private:
 	SendableChooser *chooser;
 	const std::string autoNameDefault = "Default";
 	const std::string autoNameCustom = "My Auto";
-
+	double rightDrive, leftDrive, ax, ay, az, lift, dummy;
 	std::string autoSelected;
-
-	Timer *timer = new Timer();
-
 	BuiltInAccelerometer *accel = new BuiltInAccelerometer();
+	Joystick *rightStick = new Joystick(0);
+	Joystick *leftStick  = new Joystick(1);
 
-	Joystick *rightJoystick = new Joystick(0);
-	Joystick *leftJoystick  = new Joystick(1);
-
-	double rightDrive, leftDrive, a_x, a_y, a_z;
-
-	RobotDrive *robotDrive = new RobotDrive(fLeft, bLeft, fRight, bRight);
+	Timer *timer =new Timer();
 	Talon *fRight = new Talon(0);
-	Talon *fLeft  = new Talon(1);
+	Talon *fLeft = new Talon(1);
 	Talon *bRight = new Talon(2);
-	Talon *bLeft  = new Talon(3);
+	Talon *bLeft = new Talon(3);
 	Talon *pickup = new Talon(4);
-
-	DigitalInput *limitswitch = new DigitalInput(2);
 	DigitalOutput *led1 = new DigitalOutput(1);
-
-	IMAQdxSession session;
-	Image *frame;
-	IMAQdxError imaqError;
-
-	void RobotInit() override{
+	DigitalInput *limitswitch =new DigitalInput(2);
+	RobotDrive *robotDrive = new RobotDrive(fLeft, bLeft, fRight, bRight);
+	void RobotInit()
 	{
-
-		frame = imaqCreateImage(IMAQ_IMAGE_RGB, 0);
-		imaqError = IMAQdxOpenCamera("cam0", IMAQdxCameraControlModeController, &session);
-				if(imaqError != IMAQdxErrorSuccess) {
-					DriverStation::ReportError("IMAQdxOpenCamera error: " + std::to_string((long)imaqError) + "\n");
-							}
-	}
 		chooser = new SendableChooser();
 		chooser->AddDefault(autoNameDefault, (void*)&autoNameDefault);
 		chooser->AddObject(autoNameCustom, (void*)&autoNameCustom);
 	}
 
-	void OperatorControl(){
-
-			IMAQdxStartAcquisition(session);
-
-			while(IsOperatorControl() && IsEnabled()) {
-				IMAQdxGrab(session, frame, true, NULL);
-				if(imaqError != IMAQdxErrorSuccess) {
-					DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)imaqError) + "\n");
-				} else {
-					imaqDrawShapeOnImage(frame, frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
-					CameraServer::GetInstance()->SetImage(frame);
-				}
-				Wait(0.005);
-			}
-
-			IMAQdxStopAcquisition(session);
-	}
 
 	/**
 	 * This autonomous (along with the chooser code above) shows how to select between different autonomous modes
@@ -87,37 +52,62 @@ private:
 	}
 	void AutonomousPeriodic()
 	{
+		timer->Start();
+		if(autoSelected == autoNameCustom){
+			//Custom Auto goes here
+		} else {
+			//Default Auto goes here
+			if(timer->Get()<=5)
+			{
+			pickup->Set(.1);
+			rightDrive=1;
+			leftDrive=1;
+			rightDrive = .6;
+			leftDrive  = .6;
+			robotDrive->TankDrive(rightDrive, leftDrive);
+			dummy++;
+			}
+		else
+			{
+			rightDrive = 0;
+			leftDrive = 0;
+			robotDrive->TankDrive(rightDrive, leftDrive);
+				pickup->Set(0);
+				if(limitswitch->Get()==true){
+	timer->Reset();
+				}
+			}
+			SmartDashboard::PutNumber("dummy",dummy);
+			SmartDashboard::PutBoolean("limitswitch", limitswitch);
+		}
 	}
+
 	void TeleopInit()
 	{
+
 	}
+
 	void TeleopPeriodic()
 	{
-		bool triggerRight = rightJoystick->GetRawButton(1);
-		bool triggerLeft = leftJoystick->GetRawButton(1);
-		bool buttonLed = rightJoystick->GetRawButton(2);
-		bool buttonLed2 = leftJoystick->GetRawButton(2);
+		rightDrive = rightStick->GetY();
+		leftDrive  = leftStick->GetY();
 
-		rightDrive = rightJoystick->GetY();
-		leftDrive  = leftJoystick->GetY();
-		rightDrive = .6*rightDrive;
-		leftDrive  = .6*leftDrive;
+		rightDrive = .7*rightDrive;
+		leftDrive  = .7*leftDrive;
 		robotDrive->TankDrive(rightDrive, leftDrive);
-
-		a_x = accel-> GetX();
-		a_y = accel-> GetY();
-		a_z = accel-> GetZ();
-		SmartDashboard::PutNumber("a_x",a_x);
-		SmartDashboard::PutNumber("a_y",a_y);
-		SmartDashboard::PutNumber("a_z",a_z);
-
+		ax = accel-> GetX();
+		ay = accel-> GetY();
+		az = accel-> GetZ();
 		SmartDashboard::PutData("Auto Modes", chooser);
-
+		SmartDashboard::PutNumber("ax",ax);
+		SmartDashboard::PutNumber("ay",ay);
+		SmartDashboard::PutNumber("az",az);
+		bool triggerRight = rightStick->GetRawButton(1);
+		bool triggerLeft = leftStick->GetRawButton(1); // any idea why these are throwing errors? seems to not mess with build or clean
+		bool buttonLed = rightStick->GetRawButton(2);
 		SmartDashboard::PutBoolean("trigger", triggerRight);
 		SmartDashboard::PutBoolean("trigger", triggerLeft);
-		SmartDashboard::PutBoolean("Led", triggerLeft);
-		SmartDashboard::PutBoolean("Led", triggerRight);
-
+		SmartDashboard::PutBoolean("buttonLed", buttonLed);
 
 		if(triggerRight){
 			pickup->Set(1);
@@ -126,23 +116,24 @@ private:
 			pickup->Set(0);
 		}
 
-
 		if(triggerLeft){
 			pickup->Set(-1);
 		}
 		else{
 		}
 
-	//TODO- GET A GOOD GOD-DAMN LED!!!!!
-		if(buttonLed || buttonLed2){
+		if(buttonLed){
 			led1->Pulse(1);
+
+		}
+		else{
+			led1->Pulse(0);
 		}
 	}
-
-
 	void TestPeriodic()
 	{
 		lw->Run();
 	}
 };
+
 START_ROBOT_CLASS(Robot)
